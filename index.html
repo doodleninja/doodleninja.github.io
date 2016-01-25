@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <title>Side Scroller</title>
+
+        <style>
+        @font-face {
+            font-family: handwriting;
+            src: url(blzee.ttf);
+        }
+        </style>
+    </head>
+
+    <body>
+        <svg width="640" height="480" fill="lightgrey" id="svg">
+
+            <defs>
+                <pattern id="bgp" x="0" y="0" width="20" height="20" patternUnits="userSpaceOnUse" >
+                  <line x1="10" y1="0" x2="10" y2="20" style="stroke:lightblue;stroke-width:1" />
+                  <line x1="0" y1="10" x2="20" y2="10" style="stroke:lightblue;stroke-width:1" />
+                </pattern>
+            </defs>
+
+            <rect fill="url(#bgp)" width="660" height="480" id="bg" x="20"/>
+            <image xlink:href="player_right.png" x="125" width="46" height="122" id="player"/>
+            <text x="20" y="45" fill="black" style="font-size: 36pt;font-family: handwriting" id="time">2:01</text>
+            <image xlink:href="sun.png" width="50" height="50" width="50" x="590" y="0" />
+        </svg>
+
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.4/jquery.min.js"></script>
+        <script src="tock.min.js"></script>
+        <script>
+
+        Array.prototype.remove = function() {
+            var what, a = arguments, L = a.length, ax;
+            while (L && this.length) {
+                what = a[--L];
+                while ((ax = this.indexOf(what)) !== -1) {
+                    this.splice(ax, 1);
+                }
+            }
+            return this;
+        };
+
+        svg = $("#svg")[0]
+        player = $("#player")[0]
+        bg = $("#bg")[0]
+
+        svgns = "http://www.w3.org/2000/svg"
+        xlink = "http://www.w3.org/1999/xlink"
+
+        x = 0
+        floor = 469
+        player_x = 125
+        dx = 9
+        dy = 0
+        y = floor
+        bottom = floor
+        gravity = .3
+        jump_speed = 10
+        cloud_y = 50
+        jumping = false
+        swinging = false
+        shooting = false
+        fire = false
+        swing_time = 10
+        swing_wait = 30
+        shot_time = 50
+        FPS = 48
+        right = true
+        shot_speed = 13
+
+        player.setAttribute("y", floor-122)
+
+        keys = {}
+        shots = []
+        enemies = []
+        platforms = [{y: 325, x: 500, length: 150}, {y: 200, x: 700, length: 150}]
+        coins = [{  }]
+        sprites = []
+
+        RIGHT = 39
+        LEFT = 37
+        UP = 38
+        DOWN = 40
+        SPACE = 32
+
+        function main() {
+            if (keys[RIGHT]) {
+                x += dx
+                right = true
+                player.setAttributeNS(xlink, "href", "player_right.png")
+            }
+
+            else if (keys[LEFT]) {
+                x -= dx
+                right = false
+                player.setAttributeNS(xlink, "href", "player_left.png")
+            }
+
+            x = x < 0 ? 0 : x
+
+            for (i=0;i<shots.length;i++) {
+                shot = shots[i]
+
+                shot.p += shot_speed * d
+                shot.life -= 1
+
+                if (shot.life == 0) {
+                    shots.pop()
+                    sprites.remove(shot)
+                    $(shot).remove()
+                }
+            }
+
+            bg.setAttribute("x", -x%20)
+
+            for (i=0;i<sprites.length;i++) {
+                sprite = sprites[i]
+                sprite.setAttribute("x", sprite.p - x%(sprite.mod ? sprite.mod: x+1))
+            }
+
+            bottom = Math.min.apply(null, platforms
+                .filter(function(platform) {return platform.y >= y &&
+                    x + 125 + player.width.baseVal.value / 2> platform.x &&
+                    x + 125 + player.width.baseVal.value / 2< (platform.x + platform.length)})
+                .map(function(i) {return i.y}))
+
+            if (bottom==Infinity)
+                bottom = floor
+
+            y -= dy
+            dy -= gravity
+            player.setAttribute("y", y - 122)
+
+            if (y > bottom) {
+                y = bottom
+                dy = 0
+            }
+
+            if (shooting) {
+                if (shot_timer == 0) {
+                    shooting = false
+                }
+
+                shot_timer -= 1
+            }
+            //
+            // image = right ? player_right : player_left
+            //
+            // if (swinging) {
+            //     if (swing_timer > swing_wait)
+            //         image = right ? sword_right : sword_left
+            //
+            //     if (swing_timer == 0) {
+            //         swinging = false
+            //     }
+            //
+            //     swing_timer -= 1
+            // }
+            //
+
+            $("#time").text(timer.msToTimecode(timer.lap()).slice(4))
+        }
+
+        $(window).keydown(function(e) {
+            keys[e.keyCode] = true
+
+            if (e.keyCode == UP && y == bottom) {
+                jumping = true
+                dy = jump_speed
+            }
+
+            if (e.keyCode == DOWN && !swinging) {
+                swinging = true
+                swing_timer = swing_time + swing_wait
+            }
+
+            if (e.keyCode == SPACE && !shooting) {
+                shooting = true
+                shot_timer = shot_time
+                d = right ? 1 : -1
+                shot = addSprite("shruiken.png", 25, 25, x + player_x + d + (right ? 46 : -25), y - 77)
+                shots.push(shot)
+                shot.life = 25
+                shot.d = d
+            }
+        })
+
+        $(window).keyup(function(e) {
+            keys[e.keyCode] = false
+        })
+
+        function addSprite(href, width, height, x, y, mod) {
+            sprite = document.createElementNS(svgns, 'image')
+            sprite.setAttributeNS(xlink, "href", href)
+            sprite.setAttribute("preserveAspectRatio", "none")
+            sprite.setAttribute("width", width)
+            sprite.setAttribute("height", height)
+            sprite.setAttribute("x", x)
+            sprite.p = x
+            sprite.setAttribute("y", y)
+            sprite.mod = mod
+            sprites.push(sprite)
+            svg.insertBefore(sprite, player)
+            return sprite
+        }
+
+        function start_game() {
+            for (i=0;i<=790;i+=150) {
+                addSprite("grass.png", 150, 40, i, 440, 150)
+            }
+
+            for (i=250;i<=800;i+=525) {
+                addSprite("cloud.png", 188, 92, i, 25, 525)
+            }
+
+            for (i=0;i<platforms.length;i++) {
+                platform = platforms[i]
+                addSprite("platform.png", platform.length, 5, platform.x, platform.y)
+            }
+
+            //enemies.push({image: enemy, x: 500, y: floor})
+
+            timer = new Tock({
+                countdown: true,
+                interval: 1000 / FPS,
+                callback: main
+            })
+
+            timer.start($("#time").text())
+        }
+
+        start_game()
+
+        </script>
+
+    </body>
+</html>
