@@ -9,11 +9,79 @@
             font-family: handwriting;
             src: url(blzee.ttf);
         }
+        
+        .unselect {
+            -moz-user-select: -moz-none;
+            -khtml-user-select: none;
+            -webkit-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+        }
+        
+        #main {
+            position: absolute;
+            width: 640px; 
+        }
+            
+        #title {
+            font-size: 72pt;
+            font-family: handwriting;
+            text-align: center;
+            width: 100%;
+            line-height: 90%;
+            margin-top: 25px;
+        }
+        
+        button {
+            font-family: handwriting;
+            padding: 4px;
+            font-size:36pt;
+            background: lightgrey;
+            border: 5px black solid;
+        }
+            
+        #main button {
+            position: absolute;
+            margin: 0 auto;
+            margin-top: 50px;
+            left: 0;
+            right: 0;
+            width: 170px;
+            height: 80px;
+
+        }
+            
+        #main button:hover {
+            width: 171px;
+            padding: 6px;
+            height: 91px;
+            margin-top: 49px;
+        }
+        
+        button:active {
+            background: #bfbfbf;
+        }
+            
+        #level {
+            width: 640;
+            height: 480;
+        }
         </style>
     </head>
 
     <body>
-        <svg width="640" height="480" fill="lightgrey" id="svg">
+        <div id="main">
+            <div id="title" unselectable="on" class="unselect">
+                Doodle Ninja<br>Adventure
+            </div>
+            <button type="button" id="play" onclick="showLevels()">Play!</button>
+        </div>
+        
+        <div id="levels" style="display: none;">
+            
+        </div>
+        
+        <svg width="640" height="480" fill="lightgrey">
 
             <defs>
                 <pattern id="bgp" x="0" y="0" width="20" height="20" patternUnits="userSpaceOnUse" >
@@ -22,10 +90,13 @@
                 </pattern>
             </defs>
 
-            <rect fill="url(#bgp)" width="660" height="480" id="bg" x="20"/>
-            <image xlink:href="player_right.png" x="125" width="46" height="122" id="player"/>
-            <text x="20" y="45" fill="black" style="font-size: 36pt;font-family: handwriting" id="time">2:01</text>
-            <image xlink:href="sun.png" width="50" height="50" width="50" x="590" y="0" />
+            <rect fill="url(#bgp)" width="660" height="480" id="bg" x="-20"/>
+            
+            <g id="svg" style="display: none;">
+                <image xlink:href="player_right.png" x="125" width="46" height="122" id="player"/>
+                <text x="20" y="45" fill="black" style="font-size:36pt;font-family:handwriting;" id="time" class="unselect">2:01</text>
+                <image xlink:href="sun.png" width="50" height="50" width="50" x="590" y="0" />
+            </g>
         </svg>
 
         <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.4/jquery.min.js"></script>
@@ -46,6 +117,14 @@
         svg = $("#svg")[0]
         player = $("#player")[0]
         bg = $("#bg")[0]
+        main = $("#main")
+        levels = $("#levels")
+        
+        function showLevels() {
+            main.css("display", "none")
+            levels.css("display", "block")
+        }
+        //showLevels()
 
         svgns = "http://www.w3.org/2000/svg"
         xlink = "http://www.w3.org/1999/xlink"
@@ -208,6 +287,8 @@
         }
 
         function start_game() {
+            $(svg).css("display", "block")
+            
             for (i=0;i<=790;i+=150) {
                 addSprite("grass.png", 150, 40, i, 440, 150)
             }
@@ -231,8 +312,8 @@
 
             timer.start($("#time").text())
         }
-
-        start_game()
+            
+        //start_game()
 
         </script>
 
