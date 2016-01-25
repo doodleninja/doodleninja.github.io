@@ -10,7 +10,7 @@
             src: url(blzee.ttf);
         }
         
-        .unselect {
+        body {
             -moz-user-select: -moz-none;
             -khtml-user-select: none;
             -webkit-user-select: none;
@@ -62,23 +62,33 @@
             background: #bfbfbf;
         }
             
-        #level {
-            width: 640;
-            height: 480;
+        #levels{
+            position: absolute;
+            width: 640px;
+        }
+        
+        #level-title {
+            font-size: 72pt;
+            font-family: handwriting;
+            text-align: center;
+            width: 100%;
         }
         </style>
     </head>
 
     <body>
         <div id="main">
-            <div id="title" unselectable="on" class="unselect">
+            <div id="title" unselectable="on">
                 Doodle Ninja<br>Adventure
             </div>
             <button type="button" id="play" onclick="showLevels()">Play!</button>
         </div>
         
         <div id="levels" style="display: none;">
-            
+            <div id="level-title">Level Select</div>
+            <table id="level_table">
+                
+            </table>
         </div>
         
         <svg width="640" height="480" fill="lightgrey">
@@ -94,13 +104,14 @@
             
             <g id="svg" style="display: none;">
                 <image xlink:href="player_right.png" x="125" width="46" height="122" id="player"/>
-                <text x="20" y="45" fill="black" style="font-size:36pt;font-family:handwriting;" id="time" class="unselect">2:01</text>
+                <text x="20" y="45" fill="black" style="font-size:36pt;font-family:handwriting;" id="time">2:01</text>
                 <image xlink:href="sun.png" width="50" height="50" width="50" x="590" y="0" />
             </g>
         </svg>
 
         <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.4/jquery.min.js"></script>
         <script src="tock.min.js"></script>
+        <script src="levels.js"></script>
         <script>
 
         Array.prototype.remove = function() {
@@ -118,13 +129,13 @@
         player = $("#player")[0]
         bg = $("#bg")[0]
         main = $("#main")
-        levels = $("#levels")
+        level_select = $("#levels")
         
         function showLevels() {
             main.css("display", "none")
-            levels.css("display", "block")
+            level_select.css("display", "block")
         }
-        //showLevels()
+        showLevels()
 
         svgns = "http://www.w3.org/2000/svg"
         xlink = "http://www.w3.org/1999/xlink"
