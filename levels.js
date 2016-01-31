@@ -1,15 +1,19 @@
 levels = [
     {
         name: "1",
-        size: 5000
+        size: 5000,
+        platforms: [{y: 325, x: 500, length: 200}],
+        enemies: [{x: 510, y: 325, d: 1, left: 510, right: 690}]
     },
     {
         name: "2",
-        size: 5000
+        size: 1000,
+        platforms: []
     },
     {
         name: "3",
-        size: 5000
+        size: 1000,
+        platforms: []
     },
     {
         name: "4",

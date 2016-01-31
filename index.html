@@ -9,7 +9,7 @@
             font-family: handwriting;
             src: url(blzee.ttf);
         }
-        
+
         body {
             -moz-user-select: -moz-none;
             -khtml-user-select: none;
@@ -17,12 +17,12 @@
             -ms-user-select: none;
             user-select: none;
         }
-        
+
         #main {
             position: absolute;
-            width: 640px; 
+            width: 640px;
         }
-            
+
         #title {
             font-size: 72pt;
             font-family: handwriting;
@@ -31,49 +31,100 @@
             line-height: 90%;
             margin-top: 25px;
         }
-        
+
         button {
             font-family: handwriting;
-            padding: 4px;
-            font-size:36pt;
+            font-size: 36pt;
             background: lightgrey;
             border: 5px black solid;
+            cursor: pointer;
+            vertical-align: middle;
         }
-            
+
         #main button {
             position: absolute;
-            margin: 0 auto;
-            margin-top: 50px;
             left: 0;
             right: 0;
-            width: 170px;
-            height: 80px;
+            height: 95px;
+        }
 
+        #play {
+            margin: 0 auto;
+            margin-top: 50px;
+            width: 175px;
         }
-            
-        #main button:hover {
-            width: 171px;
-            padding: 6px;
-            height: 91px;
-            margin-top: 49px;
+
+        #reset {
+            margin: 0 auto;
+            margin-top: 175px;
+            width: 325px;
         }
-        
+
+        button:hover {
+            font-size: 40pt;
+        }
+
         button:active {
-            background: #bfbfbf;
+            background: #bdbdbd;
         }
-            
+
         #levels{
             position: absolute;
             width: 640px;
+            height: 480px;
         }
-        
+
         #level-title {
             font-size: 72pt;
             font-family: handwriting;
             text-align: center;
             width: 100%;
         }
+
+        td button {
+            width: 80px;
+            height: 80px;
+        }
+
+        #dead {
+            position: absolute;
+            width: 640px;
+            text-align: center;
+        }
+
+        #dead-title {
+            font-family: handwriting;
+            font-size: 72pt;
+            margin-top: 25px;
+        }
+
+        #win {
+            position: absolute;
+            width: 640px;
+            text-align: center;
+        }
+
+        #win-title {
+            font-family: handwriting;
+            font-size: 72pt;
+            margin-top: 25px;
+        }
+
+        button.nav {
+            width: 75px;
+            height: 75px;
+        }
+
+        #dead button:not(:first-child) {
+            margin-left: 75px;
+        }
+
+        #win button:not(:first-child) {
+            margin-left: 75px;
+        }
         </style>
+
+
     </head>
 
     <body>
@@ -82,15 +133,34 @@
                 Doodle Ninja<br>Adventure
             </div>
             <button type="button" id="play" onclick="showLevels()">Play!</button>
+            <button type="button" id="reset" onclick="if(confirm('Are you sure you want to reset your saves? All progress will be deleted.')){localStorage.clear();max_level=0}">Reset Saves</button>
         </div>
-        
+
         <div id="levels" style="display: none;">
             <div id="level-title">Level Select</div>
-            <table id="level_table">
-                
+            <table id="level_table" style="width: 100%;height: 350px;">
             </table>
         </div>
-        
+
+        <div id="dead" style="display: none;">
+            <div id="dead-title">Time Over<br>You Died!</div>
+            <div style="margin-left: auto;margin-right: auto;margin-top: 100px;height:85px;">
+                <button type="button" class="nav home">⌂</button>
+                <button type="button" class="nav list">&#9776;</button>
+                <button type="button" class="nav again">⟳</button>
+            </div>
+        </div>
+
+        <div id="win" style="display: none;">
+            <div id="win-title">Level Complete!</div>
+            <div style="margin-left: auto;margin-right: auto;margin-top: 100px;height:85px;">
+                <button type="button" class="nav home">⌂</button>
+                <button type="button" class="nav list">&#9776;</button>
+                <button type="button" class="nav again">⟳</button>
+                <button type="button" class="nav next">»</button>
+            </div>
+        </div>
+
         <svg width="640" height="480" fill="lightgrey">
 
             <defs>
@@ -101,12 +171,8 @@
             </defs>
 
             <rect fill="url(#bgp)" width="660" height="480" id="bg" x="-20"/>
-            
-            <g id="svg" style="display: none;">
-                <image xlink:href="player_right.png" x="125" width="46" height="122" id="player"/>
-                <text x="20" y="45" fill="black" style="font-size:36pt;font-family:handwriting;" id="time">2:01</text>
-                <image xlink:href="sun.png" width="50" height="50" width="50" x="590" y="0" />
-            </g>
+
+            <g id="svg" style="display: none;"></g>
         </svg>
 
         <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.4/jquery.min.js"></script>
@@ -126,49 +192,82 @@
         };
 
         svg = $("#svg")[0]
-        player = $("#player")[0]
         bg = $("#bg")[0]
-        main = $("#main")
+        enter = $("#main")
         level_select = $("#levels")
-        
+
+        max_level = localStorage.max_level*1
+        if (!max_level) {
+            max_level = 0
+            localStorage.max_level = 0
+        }
+
+        function start_level(event) {
+            lnum = event.target.getAttribute("data-idx")
+            $("#win").css("display", "none")
+            $("#dead").css("display", "none")
+            level = levels[lnum]
+            size = level.size
+            platforms = level.platforms
+            enemies = level.enemies.slice()
+            coins = level.coins
+            start_game()
+        }
+
         function showLevels() {
-            main.css("display", "none")
+            $("#level_table").html("")
+            for (i=0;i<3;i++) {
+                $("#level_table").append("<tr></tr>")
+                for (j=0;j<4;j++) {
+                    $("tr:last-child").append("<td style='text-align: center;'><button " + ((i*4 + j) <= max_level ? "" : "style='background:url(lock.png);background-position:center center;' disabled") + "data-idx='" + (i*4 + j) + "'>"+ ((i*4 + j) <= max_level ? levels[i*4 + j].name : "") + "</button></td>")
+                }
+            }
+
+            $("td button").click(start_level)
+
+            enter.css("display", "none")
             level_select.css("display", "block")
         }
-        showLevels()
+        $(".next").click(start_level)
+        $(".again").click(start_level)
+        //showLevels()
 
         svgns = "http://www.w3.org/2000/svg"
         xlink = "http://www.w3.org/1999/xlink"
 
-        x = 0
-        floor = 469
-        player_x = 125
-        dx = 9
-        dy = 0
-        y = floor
-        bottom = floor
-        gravity = .3
-        jump_speed = 10
-        cloud_y = 50
-        jumping = false
-        swinging = false
-        shooting = false
-        fire = false
-        swing_time = 10
-        swing_wait = 30
-        shot_time = 50
-        FPS = 48
-        right = true
-        shot_speed = 13
+        function init() {
+            svg.innerHTML = '<image xlink:href="player_right.png" x="125" width="100" height="97" id="player"/><text x="20" y="45" fill="black" style="font-size:36pt;font-family:handwriting;" id="time"></text><image xlink:href="sun.png" width="50" height="50" width="50" x="590" y="0" />'
+            player = $("#player")[0]
 
-        player.setAttribute("y", floor-122)
+            x = 0
+            floor = 469
+            player_x = 125
+            dx = 9
+            dy = 0
+            y = floor
+            bottom = floor
+            gravity = .3
+            jump_speed = 10
+            cloud_y = 50
+            jumping = false
+            swinging = false
+            shooting = false
+            fire = false
+            swing_time = 10
+            swing_wait = 30
+            shot_time = 50
+            du = 0
+            FPS = 48
+            right = true
+            shot_speed = 13
+            shots = []
+            sprites = []
+            player.setAttribute("y", floor-97)
+        }
 
         keys = {}
-        shots = []
         enemies = []
-        platforms = [{y: 325, x: 500, length: 150}, {y: 200, x: 700, length: 150}]
-        coins = [{  }]
-        sprites = []
+        coins = []
 
         RIGHT = 39
         LEFT = 37
@@ -176,20 +275,74 @@
         DOWN = 40
         SPACE = 32
 
+        function win() {
+            timer.stop()
+            $(svg).css("display", "none")
+            if (lnum==max_level) {
+                max_level += 1
+                localStorage.max_level = max_level
+                console.log(localStorage.max_level)
+                console.log(max_level)
+            }
+            $(".next")[0].setAttribute("data-idx", parseInt(lnum)+1)
+            $(".again").attr("data-idx", parseInt(lnum))
+            $("#win").css("display", "block")
+        }
+
+        function intersectRect(r1, r2) {
+            var r1 = r1.getBoundingClientRect();    //BOUNDING BOX OF THE FIRST OBJECT
+            var r2 = r2.getBoundingClientRect();    //BOUNDING BOX OF THE SECOND OBJECT
+
+            //CHECK IF THE TWO BOUNDING BOXES OVERLAP
+          return !(r2.left > r1.right ||
+                   r2.right < r1.left ||
+                   r2.top > r1.bottom ||
+                   r2.bottom < r1.top);
+        }
+
+
         function main() {
             if (keys[RIGHT]) {
                 x += dx
                 right = true
-                player.setAttributeNS(xlink, "href", "player_right.png")
+                player.setAttributeNS(xlink, "href", player.getAttributeNS(xlink, "href").indexOf("player")!=-1 ? "player_right.png" : "sword_right.png")
             }
 
             else if (keys[LEFT]) {
                 x -= dx
                 right = false
-                player.setAttributeNS(xlink, "href", "player_left.png")
+                player.setAttributeNS(xlink, "href", player.getAttributeNS(xlink, "href").indexOf("player")!=-1 ? "player_left.png" : "sword_left.png")
             }
 
-            x = x < 0 ? 0 : x
+            x = Math.max(0, x)
+            if (x>=size) {
+                win()
+            }
+
+            for (i=0;i<enemies.length;i++) {
+                enemy = enemies[i]
+                enemy.dom.p+=enemy.d*2.5
+                if (enemy.dom.p > enemy.right-40) {
+                    enemy.dom.p = enemy.right-40
+                    enemy.d*=-1
+                }
+                if (enemy.dom.p < enemy.left) {
+                    enemy.dom.p = enemy.left
+                    enemy.d*=-1
+                }
+                if (intersectRect(player, enemy.dom)) {
+                    if (swinging && swing_timer > swing_wait) {
+                        sprites.remove(enemy.dom)
+                        enemies.remove(enemy)
+                        $(enemy.dom).remove()
+                    }
+                    else {
+                        dead()
+                    }
+                }
+            }
+
+
 
             for (i=0;i<shots.length;i++) {
                 shot = shots[i]
@@ -222,7 +375,7 @@
 
             y -= dy
             dy -= gravity
-            player.setAttribute("y", y - 122)
+            player.setAttribute("y", y - 97+du)
 
             if (y > bottom) {
                 y = bottom
@@ -236,20 +389,23 @@
 
                 shot_timer -= 1
             }
-            //
-            // image = right ? player_right : player_left
-            //
-            // if (swinging) {
-            //     if (swing_timer > swing_wait)
-            //         image = right ? sword_right : sword_left
-            //
-            //     if (swing_timer == 0) {
-            //         swinging = false
-            //     }
-            //
-            //     swing_timer -= 1
-            // }
-            //
+
+            if (swinging) {
+                if (swing_timer == swing_wait) {
+                    player.setAttributeNS(xlink, "href", right ? "player_right.png" : "player_left.png")
+                    player.setAttribute("width", 100)
+                    player.setAttribute("height", 97)
+                    if (floor-y<2) y+=20
+                    du += 20
+                }
+
+                if (swing_timer == 0) {
+                    swinging = false
+                }
+
+                swing_timer -= 1
+            }
+
 
             $("#time").text(timer.msToTimecode(timer.lap()).slice(4))
         }
@@ -264,14 +420,18 @@
 
             if (e.keyCode == DOWN && !swinging) {
                 swinging = true
+                player.setAttributeNS(xlink, "href", right ? "sword_right.png" : "sword_left.png")
+                player.setAttribute("width", 150)
+                player.setAttribute("height", 117)
                 swing_timer = swing_time + swing_wait
+                du -= 20
             }
 
             if (e.keyCode == SPACE && !shooting) {
                 shooting = true
                 shot_timer = shot_time
                 d = right ? 1 : -1
-                shot = addSprite("shruiken.png", 25, 25, x + player_x + d + (right ? 46 : -25), y - 77)
+                shot = addSprite("shruiken.png", 25, 25, x + player_x + d + (right ? 100 : -25), y - 77)
                 shots.push(shot)
                 shot.life = 25
                 shot.d = d
@@ -282,7 +442,7 @@
             keys[e.keyCode] = false
         })
 
-        function addSprite(href, width, height, x, y, mod) {
+        function addSprite(href, width, height, x, y, mod, pl) {
             sprite = document.createElementNS(svgns, 'image')
             sprite.setAttributeNS(xlink, "href", href)
             sprite.setAttribute("preserveAspectRatio", "none")
@@ -293,13 +453,15 @@
             sprite.setAttribute("y", y)
             sprite.mod = mod
             sprites.push(sprite)
-            svg.insertBefore(sprite, player)
+            if (pl) {svg.appendChild(sprite)}else{svg.insertBefore(sprite, player)}
             return sprite
         }
 
         function start_game() {
+            init()
+            level_select.css("display", "none")
             $(svg).css("display", "block")
-            
+
             for (i=0;i<=790;i+=150) {
                 addSprite("grass.png", 150, 40, i, 440, 150)
             }
@@ -313,18 +475,46 @@
                 addSprite("platform.png", platform.length, 5, platform.x, platform.y)
             }
 
+            for (i=0;i<enemies.length;i++) {
+                enemy = enemies[i]
+                enemy.dom=addSprite("ball.png", 40, 80, enemy.x, enemy.y-80)
+            }
+
+            addSprite("portal_left.png", 100, 480, size, 0)
+            addSprite("portal_right.png", 200, 480, size+100, 0, undefined, true)
+
             //enemies.push({image: enemy, x: 500, y: floor})
 
             timer = new Tock({
                 countdown: true,
                 interval: 1000 / FPS,
-                callback: main
+                callback: main,
+                complete: dead
             })
 
-            timer.start($("#time").text())
+            timer.start("0:50")
         }
-            
-        //start_game()
+
+        function dead() {
+            timer.stop()
+            $(svg).css("display", "none")
+            $(".again")[0].setAttribute("data-idx", parseInt(lnum))
+            $("#dead").css("display", "block")
+        }
+
+        $("button.home").click(function() {
+            $("#dead").css("display", "none")
+            $("#win").css("display", "none")
+
+            enter.css("display", "block")
+        })
+
+        $("button.list").click(function() {
+            $("#dead").css("display", "none")
+            $("#win").css("display", "none")
+
+            showLevels()
+        })
 
         </script>
 
